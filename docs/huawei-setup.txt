@@ -1,0 +1,29 @@
+Just to test things out, do the following:
+sudo modprobe  ftdi_sio vendor=0x12d1 product=0x1003
+
+You can then connect on /dev/ttyUSB0
+
+Minicom requires you to disable hardware handshaking (ctrl-A then O)
+
+Note the vendor and product details come from lsmod.
+
+The device is a Huawei E270 but reports itself as a E220 and an E230 as well
+
+For permanent setup, add the following line to the /etc/modules file:
+
+ftdi_sio vendor=0x12d1 product=0x1003
+
+Setup commands for the modem:
+
+at^curc=1     // Enable unsolicited response codes
+at^portsel=1  // Allow unsolicited messages to get to serial port 
+at+clip=1     // Enable caller line identification for incoming calls
+
+If the device receives a phone call, you get output like this:
+
++CLIP: "+27xxxxxxxx6",145,,,,0
+
+at+chup       // Hangup a call
+
+
+Java access to serial ports: Use https://github.com/NeuronRobotics/nrjavaserial
