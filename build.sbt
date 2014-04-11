@@ -7,5 +7,5 @@ val scalaTestVersion = "2.1.2"
 
 scalacOptions ++= Seq("-feature", "-language:postfixOps")
 
-libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
