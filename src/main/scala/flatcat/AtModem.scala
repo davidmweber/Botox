@@ -5,13 +5,14 @@ import java.io.{OutputStream, InputStream}
 import akka.actor._
 import akka.util.ByteString
 
-class SerialIO(portName :String) extends Actor with ActorLogging {
+class SerialIO(portName: String) extends Actor with ActorLogging {
 
   val portIdentifier: CommPortIdentifier = CommPortIdentifier.getPortIdentifier(portName)
   if (portIdentifier.isCurrentlyOwned) throw new RuntimeException("Error: Port is currently in use")
   val port = portIdentifier.open(this.getClass.getName, 2000)
 
-  sys.addShutdownHook { // Does not get called when you run from the IDE
+  sys.addShutdownHook {
+    // Does not get called when you run from the IDE
     println("Closing down serial port")
     port.removeEventListener()
     port.close()
@@ -29,23 +30,15 @@ class SerialIO(portName :String) extends Actor with ActorLogging {
 
   var out: OutputStream = port.getOutputStream
 
-  private def toByteArray(s: String): Array[Byte] = {
-    val b = new Array[Byte](s.length)
-    for (i <- 0 until s.length ) {
-      b(i) = s(i).toByte
-    }
-    b
+  private def write(message: String): Unit = {
+    out.write(message.getBytes("UTF-8"))
   }
 
-  def write(message: String): Unit = {
-    out.write(toByteArray(message))
-  }
-
-  class EventListener(in: InputStream ) extends  SerialPortEventListener {
-    var ret  = ByteString.newBuilder
+  class EventListener(in: InputStream) extends SerialPortEventListener {
+    var ret = ByteString.newBuilder
 
     override def serialEvent(event: SerialPortEvent): Unit = {
-      while(in.available() > 0) {
+      while (in.available() > 0) {
         val t: Byte = in.read().toByte
         t match {
           case 13 => // CR
@@ -53,7 +46,7 @@ class SerialIO(portName :String) extends Actor with ActorLogging {
               self ! ret.result()
               ret.clear()
             }
-          case 10 =>  // lF
+          case 10 => // lF
           case _ => ret = ret += t
         }
       }
@@ -67,7 +60,7 @@ class SerialIO(portName :String) extends Actor with ActorLogging {
 }
 
 object SerialIO {
-  def apply(portName :String): Props = Props(classOf[SerialIO], portName)
+  def apply(portName: String): Props = Props(classOf[SerialIO], portName)
 }
 
 object AtModem extends App {
