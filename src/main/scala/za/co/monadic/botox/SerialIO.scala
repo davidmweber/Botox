@@ -1,4 +1,4 @@
-package flatcat
+package za.co.monadic.botox
 
 import gnu.io.{SerialPortEvent, SerialPortEventListener, SerialPort, CommPortIdentifier}
 import java.io.{OutputStream, InputStream}
@@ -38,16 +38,18 @@ class SerialIO(portName: String) extends Actor with ActorLogging {
     var ret = ByteString.newBuilder
 
     override def serialEvent(event: SerialPortEvent): Unit = {
-      while (in.available() > 0) {
-        val t: Byte = in.read().toByte
-        t match {
-          case 13 => // CR
-            if (ret.length > 0) {
-              self ! ret.result()
-              ret.clear()
-            }
-          case 10 => // lF
-          case _ => ret = ret += t
+      this.synchronized { // Better safe than sorry
+        while (in.available() > 0) {
+          val t: Byte = in.read().toByte
+          t match {
+            case 13 => // CR
+              if (ret.length > 0) {
+                self ! ret.result()
+                ret.clear()
+              }
+            case 10 => // lF
+            case _ => ret = ret += t
+          }
         }
       }
     }
@@ -61,16 +63,4 @@ class SerialIO(portName: String) extends Actor with ActorLogging {
 
 object SerialIO {
   def apply(portName: String): Props = Props(classOf[SerialIO], portName)
-}
-
-object AtModem extends App {
-
-  implicit val system = ActorSystem("ModemThingy")
-  val modem = system.actorOf(SerialIO("/dev/ttyUSB0"), "USB-3G")
-
-  Thread.sleep(1000)
-  modem ! "ate\r"
-  modem ! "at^curc=1\r"
-  modem ! "at^portsel=1\r"
-  modem ! "at+clip=1\r"
 }
