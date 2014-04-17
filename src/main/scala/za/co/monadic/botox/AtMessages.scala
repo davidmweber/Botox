@@ -1,27 +1,30 @@
 package za.co.monadic.botox
 
 import scala.util.{Failure, Success, Try}
+import scala.util.matching.Regex
+
 
 /**
  *
  */
-trait AtMessage
 
-//+CLIP: "+27827718256",145,,,,0
-case class Ring(clid: String) extends AtMessage
-
-case class RSSI(strength: Int) extends AtMessage  {
-  // Convert the signal strength to dB
-  def toDb = if (strength == 99) None else Some(strength * 2 - 113)
+trait RegexInterp {
+  // creates us a regex string interpolation.
+  implicit class RegexContext(sc: StringContext) {
+    def r = new Regex(sc.parts.mkString, sc.parts.tail.map( _ => "x") : _*)
+  }
 }
 
-object RSSI {
-  val re = """\^RSSI:(\d{1,2})""".r
-  // Decodes messages of the form ^RSSI:11
-  def apply(message: String): Option[RSSI] = Try(message) match {
-    case Success(re(str)) => Some(new RSSI(str.toInt))
-    case Failure(e) => None
-  }
+trait AtMessage
+
+
+case class Ring() extends AtMessage
+
+case class AtOk() extends AtMessage // OK message from the AT command set
+
+case class RSSI(strength: Int) extends AtMessage {
+  // Convert the signal strength to dB
+  def toDb = if (strength == 99) None else Some(strength * 2 - 113)
 }
 
 case class Mode(sys: Int, subSys: Int) extends AtMessage {
@@ -46,5 +49,19 @@ case class Mode(sys: Int, subSys: Int) extends AtMessage {
     case 7 => "HSDPA and HSUPA"
     case 8 => "TD-SCDMA"
     case 9 => "HSPA+"
+  }
+}
+
+//+CLIP: "+27827718256",145,,,,0
+case class CallerId(number: String) extends AtMessage
+
+object DecodeMessage extends RegexInterp {
+
+  def apply(msg: String) : Option[AtMessage] = msg match {
+    case r"\^RSSI:(\d{1,2})${strength}" => Some(RSSI(strength.toInt))
+    case "OK" => Some(AtOk())
+    case r"\+CLIP: .\+(\d{11})${number}.*" => Some(CallerId(number)) // How do you quote a quote?
+    case _ => println(s"unknown AT message received: $msg")
+      None
   }
 }
