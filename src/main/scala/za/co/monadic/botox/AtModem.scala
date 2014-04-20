@@ -8,12 +8,13 @@ object AtModem extends App {
   val modem = system.actorOf(SerialIO("/dev/ttyUSB0"), "USB-3G")
 
   val r = DecodeMessage("^RSSI:12")
+  println(r)
   val n = DecodeMessage("+CLIP: \"+27827718256\",145,,,,0")
   println(n)
+  println(DecodeMessage("OK"))
   Thread.sleep(1000)
-  modem ! "ate\r"
+//  modem ! "ate\r"
   modem ! "at^curc=1\r"
   modem ! "at^portsel=1\r"
   modem ! "at+clip=1\r"
-  modem ! "AT^CGMM?\r"
 }

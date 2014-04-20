@@ -27,3 +27,6 @@ at+chup       // Hangup a call
 
 
 Java access to serial ports: Use https://github.com/NeuronRobotics/nrjavaserial
+
+Huawei AT command set documentation
+http://www.net139.com/UploadFile/menu/HUAWEI%20UMTS%20Datacard%20Modem%20AT%20Command%20Interface%20Specification_V2.3.pdf

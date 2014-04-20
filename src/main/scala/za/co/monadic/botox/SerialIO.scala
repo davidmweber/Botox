@@ -59,10 +59,7 @@ class SerialIO(portName: String) extends Actor with ActorLogging {
     case s: String => write(s)
     case b: ByteString =>
       val message = b.decodeString("UTF-8")
-      DecodeMessage(message) match {
-        case Some(m:AtMessage) => println( s"$message => $m}")
-        case None => s"Unrecognised message: $message"
-      }
+      println(DecodeMessage(message))
 
   }
 }

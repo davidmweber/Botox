@@ -4,30 +4,34 @@ import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
 
-/**
- *
- */
+trait AtResponse
 
-trait RegexInterp {
-  // creates us a regex string interpolation.
-  implicit class RegexContext(sc: StringContext) {
-    def r = new Regex(sc.parts.mkString, sc.parts.tail.map( _ => "x") : _*)
+case class Unknown(msg: String) extends AtResponse
+
+case class Ring() extends AtResponse
+
+case class AtOk() extends AtResponse // OK message from the AT command set
+
+object AtOk {
+  def unapply(msg: String) = {
+   if (msg == "OK") Some(AtOk) else None
   }
 }
 
-trait AtMessage
-
-
-case class Ring() extends AtMessage
-
-case class AtOk() extends AtMessage // OK message from the AT command set
-
-case class RSSI(strength: Int) extends AtMessage {
+case class RSSI(strength: Int) extends AtResponse {
   // Convert the signal strength to dB
   def toDb = if (strength == 99) None else Some(strength * 2 - 113)
 }
 
-case class Mode(sys: Int, subSys: Int) extends AtMessage {
+object RSSI {
+  val reg = """\^RSSI:(\d{1,2})""".r
+  def unapply(msg: String): Option[Int] = reg findFirstIn msg match {
+    case Some(reg(strength)) => Some(strength.toInt)
+    case _ =>  None
+  }
+}
+
+case class Mode(sys: Int, subSys: Int) extends AtResponse {
   def systemMode = sys match {
     case 0 => "No service"
     case 1 => "AMPS"
@@ -53,15 +57,22 @@ case class Mode(sys: Int, subSys: Int) extends AtMessage {
 }
 
 //+CLIP: "+27827718256",145,,,,0
-case class CallerId(number: String) extends AtMessage
+case class CallerId(number: String) extends AtResponse
 
-object DecodeMessage extends RegexInterp {
+object CallerId {
+  val reg = """\+CLIP: "\+(\d{11})".*""".r
+  def unapply(msg: String) =  reg.findFirstIn(msg) match {
+    case Some(reg(num)) => Some(num)
+    case _ => None
+  }
+}
 
-  def apply(msg: String) : Option[AtMessage] = msg match {
-    case r"\^RSSI:(\d{1,2})${strength}" => Some(RSSI(strength.toInt))
-    case "OK" => Some(AtOk())
-    case r"\+CLIP: .\+(\d{11})${number}.*" => Some(CallerId(number)) // How do you quote a quote?
-    case _ => println(s"unknown AT message received: $msg")
-      None
+object DecodeMessage {
+
+  def apply(msg: String) : AtResponse = msg match {
+    case RSSI(r) => RSSI(r)
+    case AtOk() => AtOk()
+    case CallerId(n) => CallerId(n)
+    case m => Unknown(m)
   }
 }
