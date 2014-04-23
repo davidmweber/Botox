@@ -9,7 +9,7 @@ object AtModem extends App {
 
   val r = DecodeMessage("^RSSI:12")
   println(r)
-  val n = DecodeMessage("+CLIP: \"+27827718256\",145,,,,0")
+  val n = DecodeMessage("+CLIP: \"+22222222223\",145,,,,0")
   println(n)
   println(DecodeMessage("OK"))
   Thread.sleep(1000)
